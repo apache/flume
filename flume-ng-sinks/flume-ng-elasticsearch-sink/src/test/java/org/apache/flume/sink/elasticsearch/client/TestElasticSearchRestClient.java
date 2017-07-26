@@ -33,7 +33,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.common.bytes.BytesArray;
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.BytesStream;
 import org.junit.Before;
@@ -47,12 +47,7 @@ import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 public class TestElasticSearchRestClient {
@@ -64,7 +59,7 @@ public class TestElasticSearchRestClient {
 
   @Mock
   private IndexNameBuilder nameBuilder;
-  
+
   @Mock
   private Event event;
 
@@ -91,7 +86,7 @@ public class TestElasticSearchRestClient {
     BytesStream bytesStream = mock(BytesStream.class);
 
     when(nameBuilder.getIndexName(any(Event.class))).thenReturn(INDEX_NAME);
-    when(bytesReference.toBytesArray()).thenReturn(new BytesArray(MESSAGE_CONTENT));
+    when(bytesReference.toBytesRef()).thenReturn(new BytesRef(MESSAGE_CONTENT));
     when(bytesStream.bytes()).thenReturn(bytesReference);
     when(serializer.getContentBuilder(any(Event.class))).thenReturn(bytesStream);
     fixture = new ElasticSearchRestClient(HOSTS, serializer, httpClient);
@@ -104,7 +99,7 @@ public class TestElasticSearchRestClient {
     when(httpStatus.getStatusCode()).thenReturn(HttpStatus.SC_OK);
     when(httpResponse.getStatusLine()).thenReturn(httpStatus);
     when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(httpResponse);
-    
+
     fixture.addEvent(event, nameBuilder, "bar_type", -1);
     fixture.execute();
 
@@ -113,7 +108,7 @@ public class TestElasticSearchRestClient {
 
     assertEquals("http://host1/_bulk", argument.getValue().getURI().toString());
     assertTrue(verifyJsonEvents("{\"index\":{\"_type\":\"bar_type\", \"_index\":\"foo_index\"}}\n",
-            MESSAGE_CONTENT, EntityUtils.toString(argument.getValue().getEntity())));
+        MESSAGE_CONTENT, EntityUtils.toString(argument.getValue().getEntity())));
   }
 
   @Test
@@ -148,8 +143,6 @@ public class TestElasticSearchRestClient {
 
   @Test(expected = EventDeliveryException.class)
   public void shouldThrowEventDeliveryException() throws Exception {
-    ArgumentCaptor<HttpPost> argument = ArgumentCaptor.forClass(HttpPost.class);
-
     when(httpStatus.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
     when(httpResponse.getStatusLine()).thenReturn(httpStatus);
     when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(httpResponse);
@@ -163,7 +156,7 @@ public class TestElasticSearchRestClient {
     ArgumentCaptor<HttpPost> argument = ArgumentCaptor.forClass(HttpPost.class);
 
     when(httpStatus.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                                                HttpStatus.SC_OK);
+        HttpStatus.SC_OK);
     when(httpResponse.getStatusLine()).thenReturn(httpStatus);
     when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(httpResponse);
 

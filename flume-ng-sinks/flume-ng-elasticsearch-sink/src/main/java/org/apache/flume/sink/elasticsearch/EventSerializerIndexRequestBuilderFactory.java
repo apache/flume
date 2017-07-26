@@ -18,14 +18,14 @@
  */
 package org.apache.flume.sink.elasticsearch;
 
-import java.io.IOException;
-
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.conf.ComponentConfiguration;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.common.io.BytesStream;
+
+import java.io.IOException;
 
 /**
  * Default implementation of {@link ElasticSearchIndexRequestBuilderFactory}.
@@ -60,7 +60,8 @@ public class EventSerializerIndexRequestBuilderFactory
 
   @Override
   protected void prepareIndexRequest(IndexRequestBuilder indexRequest,
-      String indexName, String indexType, Event event) throws IOException {
+                                     String indexName, String indexType, Event event)
+      throws IOException {
     BytesStream contentBuilder = serializer.getContentBuilder(event);
     indexRequest.setIndex(indexName)
         .setType(indexType)
