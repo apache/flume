@@ -425,6 +425,8 @@ public class SpillableMemoryChannel extends FileChannel {
           LOGGER.debug("Take Committed. Drain Order Queue state : " + drainOrder.dump());
         }
       }
+      putList.clear();
+      takeList.clear();
     }
 
     private void takeCommit() {
@@ -803,6 +805,20 @@ public class SpillableMemoryChannel extends FileChannel {
     }
     channelCounter.setChannelSize(memQueue.size() + drainOrder.overflowCounter);
     channelCounter.stop();
+      try {
+          LOGGER.info("starting checkpoint memory data,memorySize:{},overflowSize:{} ", memQueue.size(), drainOrder.overflowCounter);
+          BasicTransactionSemantics checkpointTx = getOverflowTx();
+          checkpointTx.begin();
+          synchronized (queueLock) {
+              for (Event event : memQueue) {
+                  checkpointTx.put(event);
+              }
+          }
+          checkpointTx.commit();
+          LOGGER.info("finish checkpoint memory data");
+      } catch (Exception e) {
+          LOGGER.error("stop with commit FileChannel exception", e);
+      }
     super.stop();
   }
 
